@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Data handling classes and methods.
+Classes and methods to handle the games.
 
 @author: Nathanael Romano and Daniel Levy
 """
@@ -39,7 +39,7 @@ class TrainingGame(Game):
         self.comments = scraping.getComments(self.id)
     
     @property # FIXME: implement cached property decorator
-    def goals(self):
+    def goals(self): # FIXME: problem with own goals!!
         '''Returns the list of tuples 'minute, comment" for the game's goals,
         ordered by minute.'''
         return [(int(minute[:-1]), comment) for minute, 
@@ -55,3 +55,17 @@ class TrainingGame(Game):
             return dict([(score[0][:-2], score[0][-1]), 
                          (score[1][:-2], score[1][-1])])
         return [(goal[0], getScore(goal[1])) for goal in self.goals]
+
+    def scorer(self, n):
+        '''Returns the nth scorer of the game.'''
+        pass
+
+    @property
+    def scoreAtHalfTime(self):
+        '''Returns the score at half time.'''
+        pass
+    
+    @property
+    def finalScore(self):
+        '''Returns the final score.'''
+        pass
