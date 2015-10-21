@@ -20,7 +20,9 @@ class Game(object):
     comments, and automatically find the answer to the questions.
     '''
     
-    def __init__(self, url):
+    ID_POSITION = 5
+    
+    def __init__(self, url, comments=True):
         self.id = url.split('/')[self.ID_POSITION]
         self.url = url
         self.tree = scraping.getTree(url)
@@ -31,7 +33,6 @@ class Game(object):
 class TrainingGame(Game):
     '''A game used to train the algorithm.'''
     
-    ID_POSITION = 5
     GOAL_BEACON = 'Goal!'
     
     def __init__(self, url):

@@ -29,7 +29,8 @@ def getText(tree):
     For now, as a list of paragraphs. Might be better to simply return the full
     collapsed text.
     '''
-    text = tree.xpath('//p/text()')
+    text = tree.xpath('//h1/text()')
+    text.extend(tree.xpath('//p/text()'))
     return cleanText(text)
 
 def getURLs(date, limit=None, league=None):

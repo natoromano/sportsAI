@@ -11,14 +11,18 @@ ARTEFACTS = ['\n', '\t']
 def isClean(st):
     '''Checks that a given string is clean, i.e. does not have encoding
     artefacts.'''
-    return all([artefact not in st] for artefact in ARTEFACTS)
+    return all([artefact not in st for artefact in ARTEFACTS])
 
 def cleanText(text):
-    '''Cleans input text, with respect to the "artefacts" list.'''
+    '''Cleans input text, with respect to the "artefacts" list.
+    
+    The [:-4] at the end removes the last three paragraphs, corresponding to
+    the "share on Facebook" lines of the website.
+    '''
     if isinstance(text, list):
         text = [st for st in text if isClean(st)]
     if isinstance(text, str):
         for artefact in ARTEFACTS:
             text = text.replace(artefact, '')
-    return text
+    return text[:-4]
     
