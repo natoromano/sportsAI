@@ -9,7 +9,7 @@ score.
 import sys
 import math
 
-from game import TrainingGame
+from game import Game
 
 def loop():
     '''Loop function for interactive testing.'''
@@ -20,7 +20,7 @@ def loop():
             break
         try:
             print 'Fetching game report...'
-            game = TrainingGame(url)
+            game = Game(url)
         except IndexError:
             break
             

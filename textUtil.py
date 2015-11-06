@@ -7,6 +7,8 @@ libraries.
 """
 
 ARTEFACTS = ['\n', '\t']
+COUNTERS = ['0', 'first', 'second', 'third', 'fourth', 'fifth',
+                'sixth', 'seventh', 'eigth', 'ninth']
 
 def isClean(st):
     '''Checks that a given string is clean, i.e. does not have encoding
@@ -26,3 +28,9 @@ def cleanText(text):
             text = text.replace(artefact, '')
     return text[:-4]
     
+def nth(n):
+    '''Returns the string associated with the english sentence 'nth'. Hacky.'''
+    if n < len(COUNTERS):
+        return COUNTERS[n]
+    else:
+        return '{}th'.format(str(n))
