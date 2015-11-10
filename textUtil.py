@@ -6,6 +6,8 @@ libraries.
 @author: Nathanael Romano and Daniel Levy
 """
 
+import collections
+
 ARTEFACTS = ['\n', '\t']
 COUNTERS = ['0', 'first', 'second', 'third', 'fourth', 'fifth',
                 'sixth', 'seventh', 'eigth', 'ninth']
@@ -34,3 +36,38 @@ def nth(n):
         return COUNTERS[n]
     else:
         return '{}th'.format(str(n))
+        
+def anonymize(text, identities=None):
+    '''Anonymizes the given text.
+    
+    Identities is a mapping word:index, mutated by the function.
+    '''
+    if not identities:
+        identities = {}
+    output = []
+    current = []
+    for word in text.split():
+        if word.istitle():
+            current.append(word)
+        else:
+            if current:
+                if ' '.join(current) in identities:
+                    index = identities[' '.join(current)]
+                    output.append('ent' + str(index))
+                else:
+                    index = len(identities)
+                    identities[' '.join(current)] = index
+                    output.append('ent' + str(index))
+                    current = []
+            output.append(word)
+    if current:
+        if ' '.join(current) in identities:
+            index = identities[' '.join(current)]
+            output.append('ent' + str(index))
+        else:
+            index = len(identities)
+            identities[' '.join(current)] = index
+            output.append('ent' + str(index))
+            current = []
+    return ' '.join(output), identities
+    
