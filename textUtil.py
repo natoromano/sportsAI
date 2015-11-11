@@ -37,6 +37,12 @@ def nth(n):
     else:
         return '{}th'.format(str(n))
         
+def is_entity(word):
+    '''Returns true if the word is an entity.'''
+    if '\'' in word:
+        return word.replace('\'', '').istitle()
+    return word.istitle()
+        
 def anonymize(text, identities=None):
     '''Anonymizes the given text.
     
@@ -47,13 +53,14 @@ def anonymize(text, identities=None):
     output = []
     current = []
     for word in text.split():
-        if word.istitle():
+        if is_entity(word):
             current.append(word)
         else:
             if current:
                 if ' '.join(current) in identities:
                     index = identities[' '.join(current)]
                     output.append('ent' + str(index))
+                    current = []
                 else:
                     index = len(identities)
                     identities[' '.join(current)] = index
@@ -64,6 +71,7 @@ def anonymize(text, identities=None):
         if ' '.join(current) in identities:
             index = identities[' '.join(current)]
             output.append('ent' + str(index))
+            current = []
         else:
             index = len(identities)
             identities[' '.join(current)] = index
