@@ -46,7 +46,15 @@ class Game(object):
     def team_goals(self, team):
         '''Returns the list of goals scored by the given team.'''
         def is_team(goal):
-            return goal[goal.index('(')+1:goal.index(')')] == team
+            if self.GOAL_BEACON in goal:
+                return goal[goal.index('(')+1:goal.index(')')] == team
+            elif self.OWN_GOAL in goal:
+                try:
+                     return goal[goal.index(',')+2:goal.index('.')] != team
+                except:
+                    pass
+            else:
+                return False
         return [goal for goal in self.goals if is_team(goal[1])]
         
     @property
