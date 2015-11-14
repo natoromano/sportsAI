@@ -1,17 +1,29 @@
+# -*- coding: utf-8 -*-
+"""
+Classes and methods to learn from the dataset.
+
+@author: Nathanael Romano and Daniel Levy
+
+!!!!!!!!!!! OBSOLETE !!!!!!!!!!!!
+"""
+
+import time
+
 import numpy as np
 import pandas as pd
-import time
-import game
-
 from sklearn import svm, linear_model
+
+import game
 
 start_time = time.time()
 
 df = pd.DataFrame.from_csv('dataset_who_won_urls_1108.csv')
 
 def Training():
+
     def __init__(self):
         return 
+
     def loadDataset(self, csv):
         start_time = time.time()
         self.df = pd.DataFrame.from_csv(csv)
@@ -88,4 +100,3 @@ for i, _ in enumerate(testWords):
 scores.sort()
 
 print scores[-5:]
-

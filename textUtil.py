@@ -6,11 +6,12 @@ libraries.
 @author: Nathanael Romano and Daniel Levy
 """
 
-import collections
+import re
 
 ARTEFACTS = ['\n', '\t']
 COUNTERS = ['0', 'first', 'second', 'third', 'fourth', 'fifth',
                 'sixth', 'seventh', 'eigth', 'ninth']
+ENTITY_TOKEN = 'ent'
 
 def isClean(st):
     '''Checks that a given string is clean, i.e. does not have encoding
@@ -61,23 +62,35 @@ def anonymize(text, identities=None):
             if current:
                 if ' '.join(current) in identities:
                     index = identities[' '.join(current)]
-                    output.append('ent' + str(index))
+                    output.append(ENTITY_TOKEN + str(index))
                     current = []
                 else:
                     index = len(identities)
                     identities[' '.join(current)] = index
-                    output.append('ent' + str(index))
+                    output.append(ENTITY_TOKEN + str(index))
                     current = []
             output.append(word)
     if current:
         if ' '.join(current) in identities:
             index = identities[' '.join(current)]
-            output.append('ent' + str(index))
+            output.append(ENTITY_TOKEN + str(index))
             current = []
         else:
             index = len(identities)
             identities[' '.join(current)] = index
-            output.append('ent' + str(index))
+            output.append(ENTITY_TOKEN + str(index))
             current = []
     return ' '.join(output), identities
     
+def isToken(word):
+    '''Returns true if the given word is of the form 'entX'.'''
+    if not word:
+        return False
+    return re.match(ur'ent[1-9]+', word) is not None
+
+def removeToken(word):
+    '''Returns the word if its not a token, 'ent' otherwise.'''
+    if isToken(word):
+        return ENTITY_TOKEN
+    else:
+        return word

@@ -14,6 +14,8 @@ from textUtil import cleanText
 
 COMMENTS_URL = 'http://www.espnfc.us/commentary/{}/commentary.html'
 SCORES_URL = 'http://www.espnfc.us/scores?date={}'
+VALID_LEAGUES = ['barclays', 'italian', 'spanish', 'german', 'french',
+                 'championship', 'scottish', 'italian']
 
 class ScrapingException(Exception):
     pass
@@ -39,7 +41,7 @@ def getURLs(date, limit=None, league=None):
     A limit in the number of urls can be set, in this case random games will
     be returned.
     Otherwise, a league can be specified from the following list : barclays,
-    spanish, german, french, championship, scottish, italian
+    spanish, german, french, scottish, italian
     '''
     formatDate = date.split('/')[-1] + date.split('/')[0] + date.split('/')[1]
     tree = getTree(SCORES_URL.format(formatDate))
@@ -48,9 +50,14 @@ def getURLs(date, limit=None, league=None):
     if limit:
         random.shuffle(urls)
         urls = urls[:limit]
-    if league:
-        urls = [url for url in urls if league in url]
-    return urls
+    def valid_league(url, league):
+        if league:
+            return league in url
+        for league in VALID_LEAGUES:
+            if league in url:
+                return True
+        return False
+    return [url for url in urls if valid_league(url, league)]
 
 def getTeams(tree):
     '''Returns the two playing teams: home, away.'''
