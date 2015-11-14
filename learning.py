@@ -9,6 +9,32 @@ start_time = time.time()
 
 df = pd.DataFrame.from_csv('dataset_who_won_urls_1108.csv')
 
+def Training():
+    def __init__(self):
+        return 
+    def loadDataset(self, csv):
+        start_time = time.time()
+        self.df = pd.DataFrame.from_csv(csv)
+        self.loadingTime = time.time() - start_time()
+
+    def setModel(self, model):
+        self.model = model
+
+    def train(self):
+        start_time = time.time()
+        
+        trainingColumns = np.delete(columns, 0)
+        X = self.df[trainingColumns]
+        y = df['label']
+
+        self.model.fit(X,y)
+
+        self.trainingTime = time.time() - start_time()
+
+    def addExamplesFromDict(self, d):
+        self.df.append(d)
+        self.fillna(0)
+
 print 'Loading took' , time.time() - start_time
 
 start_time = time.time()
@@ -16,11 +42,10 @@ start_time = time.time()
 columns = df.columns.values
 
 trainingColumns = np.delete(columns, 0)
-
 X = df[trainingColumns]
 y = df['label']
 
-model = svm.SVC()
+model = svm.SVC(probability=True)
 model.fit(X, y)
 
 print 'Training took', time.time() - start_time
@@ -57,10 +82,10 @@ Xtest = df[-n:]
 
 for i, _ in enumerate(testWords):
     x = Xtest[trainingColumns][i:i+1]
-    score = model.decision_function[0]
-    scores.append((score[0], testWords[i]))
+    score = model.predict_log_proba(x)[0][1]
+    scores.append((score, testWords[i]))
 
 scores.sort()
 
-print scores[:5]
+print scores[-5:]
 

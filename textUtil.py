@@ -39,6 +39,8 @@ def nth(n):
         
 def is_entity(word):
     '''Returns true if the word is an entity.'''
+    if word.upper() == word:
+        return True
     if '\'' in word:
         return word.replace('\'', '').istitle()
     return word.istitle()
