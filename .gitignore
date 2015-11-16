@@ -1,0 +1,9 @@
+# removing pyc
+*.pyc
+
+# removing dataset
+*.columns
+*.model
+*.csv
+*.entities
+
