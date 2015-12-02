@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Method to build and dump the dataset. Hacky for now, should later be
-automated.
+Script that builds our various datasets.
+TODO
 
 @author: Nathanael Romano and Daniel Levy
 """
@@ -74,7 +74,7 @@ def run(name, query):
     dataset, entities = buildDataset(games, query)
     dataset.toCSV('{}.csv'.format(name))
     dataset.saveColumns('{}.columns'.format(name))
-    f = open('{}.entities'.format(name), 'w')
+    f = open('models/{}.entities'.format(name), 'w')
     pickle.dump(entities, f)
     f.close()
 

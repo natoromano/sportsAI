@@ -14,16 +14,19 @@ from textUtil import cleanText
 
 COMMENTS_URL = 'http://www.espnfc.us/commentary/{}/commentary.html'
 SCORES_URL = 'http://www.espnfc.us/scores?date={}'
-VALID_LEAGUES = ['barclays', 'italian', 'spanish', 'german', 'french',
-                 'championship', 'scottish', 'italian']
+VALID_LEAGUES = ['barclays', 'italian', 'spanish', 'german', 'french', 
+                 'scottish', 'championship']
+
 
 class ScrapingException(Exception):
     pass
+
 
 def getTree(url):
     '''Gets the html element tree corresponding to given url.'''
     tree = html.fromstring(requests.get(url).text)
     return tree
+
     
 def getText(tree):
     '''Returns the article's cleaned full text.
@@ -34,6 +37,7 @@ def getText(tree):
     text = tree.xpath('//h1/text()')
     text.extend(tree.xpath('//p/text()'))
     return cleanText(text)
+
 
 def getURLs(date, limit=None, league=None):
     '''Gets all game urls from a specific date.
@@ -59,12 +63,14 @@ def getURLs(date, limit=None, league=None):
         return False
     return [url for url in urls if valid_league(url, league)]
 
+
 def getTeams(tree):
     '''Returns the two playing teams: home, away.'''
     path = '//div[@class="above-fold"]//div[@class="team-name"]/span/text()'
     teams = tree.xpath(path)
     return teams[0], teams[1]
-    
+ 
+   
 def getComments(gameID):
     '''Returns the list of comments, in the form of tuples (minute, comment).
     

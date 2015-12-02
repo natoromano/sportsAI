@@ -13,10 +13,12 @@ COUNTERS = ['0', 'first', 'second', 'third', 'fourth', 'fifth',
                 'sixth', 'seventh', 'eigth', 'ninth']
 ENTITY_TOKEN = 'ent'
 
+
 def isClean(st):
     '''Checks that a given string is clean, i.e. does not have encoding
     artefacts.'''
     return all([artefact not in st for artefact in ARTEFACTS])
+
 
 def cleanText(text):
     '''Cleans input text, with respect to the "artefacts" list.
@@ -30,6 +32,7 @@ def cleanText(text):
         for artefact in ARTEFACTS:
             text = text.replace(artefact, '')
     return text[:-4]
+
     
 def nth(n):
     '''Returns the string associated with the english sentence 'nth'. Hacky.'''
@@ -37,7 +40,8 @@ def nth(n):
         return COUNTERS[n]
     else:
         return '{}th'.format(str(n))
-        
+ 
+       
 def is_entity(word):
     '''Returns true if the word is an entity.'''
     if word.upper() == word:
@@ -45,7 +49,8 @@ def is_entity(word):
     if '\'' in word:
         return word.replace('\'', '').istitle()
     return word.istitle()
-        
+ 
+       
 def anonymize(text, identities=None):
     '''Anonymizes the given text.
     
@@ -81,6 +86,7 @@ def anonymize(text, identities=None):
             output.append(ENTITY_TOKEN + str(index))
             current = []
     return ' '.join(output), identities
+
     
 def isToken(word):
     '''Returns true if the given word is of the form 'entX'.'''
@@ -88,9 +94,14 @@ def isToken(word):
         return False
     return re.match(ur'ent[1-9]+', word) is not None
 
+
 def removeToken(word):
     '''Returns the word if its not a token, 'ent' otherwise.'''
     if isToken(word):
         return ENTITY_TOKEN
     else:
         return word
+
+def queryName(query):
+    '''Turns a query like 'Who won?' into 'who_won'.'''
+    return '_'.join(query.lower()[:-1].split())

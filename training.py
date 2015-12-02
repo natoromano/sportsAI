@@ -1,40 +1,67 @@
 # -*- coding: utf-8 -*-
 """
-Script to train the model, using various algorithms.
+Methods to train the model, using various algorithms.
 
 @author: Nathanael Romano and Daniel Levy
 """
 
-import pickle
-from sklearn import linear_model, svm
+import sys
+sys.path.append('liblinear/python')
 
-import dataset
+import liblinearutil as llb
 
-def loadDataset(name):
+import dataset as dts
+
+### LOADING ###
+
+def load_dataset(name):
     '''Loads the given dataset.
     
     Name is the data set name, e.g. who_won_1031.
     '''
-    path = name + '.csv'
-    return dataset.Dataset.fromCSV(path)
+    path = 'data/' + name + '.txt'
+    return dts.Dataset.load(path)
 
-def trainLogisticRegression(name):
+### TRAINNG METHODS ###
+
+def logistic_regression(name):
     '''Trains a logistic regression model on the feature extracted data.
     
     Name is the data set name, e.g. who_won_1031.
     '''
-    data = loadDataset(name)
-    model = linear_model.LogisticRegression()
-    X = data.getX(excludedColumns = ['label','word'])
-    y = data.getY(labelColumn = 'label')
-    model.fit(X,y)
-    return model
+    data = load_dataset(name)
+    return llb.train(data.Y, data.X, '-s 0')
+    
+    
+def svm(name):
+    '''Trains a logistic regression model on the feature extracted data.
+    
+    Name is the data set name, e.g. who_won_1031.
+    '''
+    data = load_dataset(name)
+    return llb.train(data.Y, data.X, '-s 1')
 
-def run(name):
-    '''Runs training.'''
-    model = trainLogisticRegression(name)
-    f = open('{}.model'.format(name), 'w')
-    pickle.dump(model, f)
-    f.close()
+# ACTUAL TRAINING
 
-run('who_won_1031')
+def get_training_method(method):
+    '''Gets the training method (method input is a string).'''
+    try:
+        return globals()[method]
+    except:
+        msg = 'No training method for {}'
+        raise NotImplementedError(msg.format(method))
+
+
+def train(name, method):
+    '''Runs training.
+    
+    Must us the liblinear library.
+    '''
+    print 'Training dataset {} with method {}.'.format(name, method)
+    model = get_training_method(method)(name)
+    try:
+        llb.save_model('models/{}.model'.format(name), model)
+        print 'Saved model.'
+    except:
+        print 'Could not save model.'
+    

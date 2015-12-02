@@ -17,7 +17,7 @@ import game
 
 start_time = time.time()
 
-df = pd.DataFrame.from_csv('dataset_who_won_urls_1108.csv')
+df = pd.DataFrame.from_csv('models/dataset_who_won_urls_1108.csv')
 
 def Training():
 

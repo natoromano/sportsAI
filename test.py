@@ -5,67 +5,72 @@ Script to test the algorithm. NEEDS REFACTORING
 @author: Nathanael Romano and Daniel Levy
 """
 
+import sys
+sys.path.append('liblinear/python/')
+
 import pickle, copy
-import re
+import liblinearutil as llb
 
 import game
-import dataset
-import textUtil
+import dataset as dts
+import textUtil as txt
+import featureExtraction as ext
+import training as trn
 import scraping
 
 
+def simple_test():
+    '''Trains and interactively test a simple model with few games, 
+    for debugging.'''
+    query = 'Who won?'
+    urls = scraping.getURLs('11/28/2015', limit=30)
+    dts.build_and_dump(query, urls)
+    name = txt.queryName(query) + '_' + str(len(urls))
+    # dumps model
+    trn.train(name, 'logistic_regression')
+    irun(name, query, 3)
+    
+
 def load(name):
     '''Loads the model and data.'''
-    model = pickle.load(open('{}.model'.format(name),'r'))
-    oldEntities = pickle.load(open('{}.entities'.format(name),'r')) 
+    model = llb.load_model('models/{}.model'.format(name))
+    oldEntities = pickle.load(open('data/{}.entities'.format(name), 'r')) 
     entities = copy.deepcopy(oldEntities)
-    columns = pickle.load(open('{}.columns'.format(name),'r'))
-    columns = columns[columns != 'label']
-    columns = columns[columns != 'word']
-    return model, entities, columns
+    return model, entities
 
 
-def predict(name, query, testGame, model, entities, columns):
+def predict(name, query, testGame, model, method='skip_1', entities=None):
     '''Predicts the answer to the query and returns an array of tuples (score,
-    answer), as well as the correct answer.
+    answer), as well as the correct answer. ONLY WORKS WITH 1-SKIP
     
     The three last inputs should be the output of the load() function.
     '''
-    testSet = dataset.Dataset.fromHeader('{}.columns'.format(name))
+    entities = entities or {}
+    # create Dataset object
+    testSet = dts.Dataset(name)    
     text = testGame.text
-    test = []
-    for i,_ in enumerate(text):
-        text[i], entities = textUtil.anonymize(text[i], entities)
+    for i in range(len(text)):
+        text[i], entities = txt.anonymize(text[i], entities)
+    inv_entities = {v: k for k, v in entities.items()}
+    # fetch answer
     answer = testGame.query_dict[query]
-    if answer == 'Draw':
-        answer = testGame.home + ' ' + testGame.away
-    inv_entities = {v: k for k,v in entities.items()}
     for s in text:
-        s = '#BEGIN# '+s+' #END'
+        s = '#BEGIN# ' + s + ' #END#'
         words = s.split(' ')
+        # iterate over entities
         for i in range(1, len(words)-1):
-            if re.match(ur'ent[1-9]+', words[i]) == None:
-                continue
-            d = {}
-            w_minus_1 = words[i-1]
-            w_plus_1 = words[i+1]
-            d['word'] = words[i]
-            d['word_before_=_'+str(w_minus_1)] = 1
-            d['word_after_=_'+str(w_plus_1)] = 1
+            if not txt.isToken(words[i]):
+                continue     
+            feature_vector = ext.extractor(method)(words, i)
             entityNumber = int(words[i][3:])
-            if inv_entities[entityNumber] in answer.split(' '):
-                d['label'] = 1
-            else:
-                d['label'] = 0
-            test.append(d)
-    testSet.append(test, fill=True)  
-    words = testSet.getY(labelColumn='word') 
-    testing = testSet.df[columns]
+            label = (inv_entities[entityNumber] in answer.split(' ')) * 1.0
+            # add feature vect and label to dataset
+            testSet.append((feature_vector, label), words[i])
     scores = []
-    for i, r in enumerate(testing.iterrows()):
-        entityNumber = int(words[i][3:])
-        score = model.predict_log_proba(r[1])[0][1]
-        scores.append((score, inv_entities[entityNumber]))
+    words = testSet.entities
+    _, _, probas = llb.predict(testSet.Y, testSet.X, model, '-b 1')
+    for i, proba in enumerate(probas):
+        scores.append((proba[1], inv_entities[int(words[i][3:])]))
     return scores, answer
 
 
@@ -75,7 +80,7 @@ def irun(name, query, debug=None):
     If debug is given, it should be a number of scores to print.
     '''
     testUrl = ''
-    model, entities, columns = load(name)
+    model, entities = load(name)
     
     while testUrl != 'stop':
         print 'Which URL? Enter stop to quit.'
@@ -83,8 +88,8 @@ def irun(name, query, debug=None):
         if testUrl == 'stop':
             break
         testGame = game.Game(testUrl)
-        scores, answer = predict(name, query, 
-                                 testGame, model, entities, columns)
+        scores, answer = predict(name, query, testGame, model, 'skip_1', 
+                                 entities)
         print 'Query:', query
         print 'I think the answer is {}.'.format(max(scores)[1])
         print 'It is actually {}.'.format(answer)
@@ -128,6 +133,7 @@ def test(name, query, date, number=10, flexible=True):
     return correct / float(len(output))
         
 
-#irun('who_won_1031', 'Who won?', False)
-accuracy = test('who_won_1031', 'Who won?', '10/24/2015', 20, False)
-print 'Accuracy :', accuracy
+simple_test()
+#irun('who_won_6', 'Who won?', 3)
+#accuracy = test('who_won_1031', 'Who won?', '10/24/2015', 20, False)
+#print 'Accuracy :', accuracy

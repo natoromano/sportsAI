@@ -1,66 +1,115 @@
 # -*- coding: utf-8 -*-
 """
-Classes to handle datasets. Could be merged with the "buildingDataset" files.
+Classes and methods to handle datasets.
 
 @author: Nathanael Romano and Daniel Levy
 """
 
-import pandas as pd
+import os
 import pickle
 
+import game
+import textUtil as txt
+import featureExtraction as ext
+
+### DATASET CLASS ###
+
 class Dataset(object):
-    '''Base class for a dataset.'''
+    '''Base class for a dataset.
     
-    def __init__(self, df=None):
-        if df is not None:
-            self.df = df
-        else:
-            self.df = pd.DataFrame()
-            
+    self.X and self.Y are two lists of respecively the examples and their
+    labels, but self exhibits a mapping x:y.
+    '''
+    
+    def __init__(self, name):
+        self.name = name
+        self.X = []
+        self.Y = []
+        self.entities = []
+        self._features = {}
+        self._max_feature_key = 0
+
     @classmethod
-    def fromDataframe(cls, df):
-        '''Instantiation from a data frame.'''
-        return cls(df)
+    def load(cls, path):
+        '''Loads the dataset from the given path.'''
+        f = open(path, 'r')
+        try:
+            return pickle.load(f)
+        except:
+            return None
         
-    @classmethod
-    def fromCSV(cls, path):
-        '''Instantiation from a file path.'''
-        return cls(pd.DataFrame.from_csv(path))
+    def append(self, example, entity):
+        '''Adds an example to the dataset.'''
+        x_string, y = example
+        x = {}
+        for k, v in x_string.iteritems():
+            if k in self._features:
+                x[self._features[k]] = v
+            else:
+                self._add_feature(k)
+                x[self._max_feature_key] = v
+        self.X.append(x)
+        self.Y.append(y)
+        self.entities.append(entity)
         
-    @classmethod
-    def fromHeader(cls, path):
-        '''Instantiation from a header.'''
-        f = open(path,'r')
-        columns = pickle.load(f)
+    def dump(self, path):
+        '''Dumps the dataset to the given path.'''
+        f = open(path, 'w')
+        pickle.dump(self, f)
         f.close()
-        return cls(pd.DataFrame(columns=columns))
+        
+    def _add_feature(self, feature):
+        '''Adds a feature to self's dictionnary.'''
+        self._max_feature_key += 1
+        self._features[feature] = self._max_feature_key
 
-    def toCSV(self, path):
-        '''Dump the data frame to path.'''
-        self.df.to_csv(path)
 
-    def saveColumns(self, path):
-        '''Dumps the columns to path.'''
-        columns = self.df.columns
-        f = open(path,'w')
-        pickle.dump(columns, f)
-        f.close()
+### BUILDING DATASET ###
 
-    def getX(self, excludedColumns=['label']):
-        '''Gets the X matrix.'''
-        trainCol = self.df.columns[~self.df.columns.isin(excludedColumns)]
-        return self.df[trainCol]
+def build_dataset(urls, name, query, method='skip_1', entities=None):
+    '''Builds the data set for a list of game URLs and a given query.'''
+    entities = entities or {}
+    # create Dataset object
+    print 'Starting to build dataset {}.'.format(name)
+    dataset = Dataset(name)
+    for url in urls:
+        # create game objects
+        try:
+            g = game.Game(url)
+        except:
+            continue
+        # get and anonimyze text
+        text = g.text
+        for i in range(len(text)):
+            text[i], entities = txt.anonymize(text[i], entities)
+        inv_entities = {v: k for k, v in entities.items()}
+        # fetch answer
+        answer = g.query_dict[query]
+        for s in text:
+            s = '#BEGIN# ' + s + ' #END#'
+            words = s.split(' ')
+            # iterate over entities
+            for i in range(1, len(words)-1):
+                if not txt.isToken(words[i]):
+                    continue     
+                feature_vector = ext.extractor(method)(words, i)
+                entityNumber = int(words[i][3:])
+                label = (inv_entities[entityNumber] in answer.split(' ')) * 1.0
+                # add feature vect and label to dataset
+                dataset.append((feature_vector, label), words[i])
+    return dataset, entities
 
-    def getY(self, labelColumn='label'):
-        '''Gets the Y matrix.'''
-        return self.df[labelColumn]
 
-    def append(self, rows, fill=False):
-        '''Appends rows the self.'''
-        self.df = self.df.append(rows)
-        if fill:
-            self.df.fillna(0, inplace=True)
-
-    def __str__(self):
-        '''Custom representation method.'''
-        return str(self.df)
+def build_and_dump(query, urls):
+    '''Dumps the data set and entities to files.'''
+    name = txt.queryName(query) + '_' + str(len(urls))
+    dataset, entities = build_dataset(urls, name, query)
+    if os.path.isfile('data/{}.txt'.format(name)):
+        os.remove('data/{}.txt'.format(name))
+    dataset.dump('data/{}.txt'.format(name))
+    if os.path.isfile('data/{}.entities'.format(name)):
+        os.remove('data/{}.entities'.format(name))   
+    f = open('data/{}.entities'.format(name), 'w')
+    pickle.dump(entities, f)
+    f.close()
+    print 'Sucessfully dumped dataset.'
