@@ -102,14 +102,16 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
 
 def build_and_dump(query, urls):
     '''Dumps the data set and entities to files.'''
+    def make_name(name, type_='txt'):
+        return 'data/{}.{}'.format(name, type_)
     name = txt.queryName(query) + '_' + str(len(urls))
     dataset, entities = build_dataset(urls, name, query)
-    if os.path.isfile('data/{}.txt'.format(name)):
-        os.remove('data/{}.txt'.format(name))
-    dataset.dump('data/{}.txt'.format(name))
-    if os.path.isfile('data/{}.entities'.format(name)):
-        os.remove('data/{}.entities'.format(name))   
-    f = open('data/{}.entities'.format(name), 'w')
+    if os.path.isfile(make_name(name)):
+        os.remove(make_name(name))
+    dataset.dump(make_name(name))
+    if os.path.isfile(make_name(name, 'entities')):
+        os.remove(make_name(name, 'entities'))   
+    f = open(make_name(name, 'entities'), 'w')
     pickle.dump(entities, f)
     f.close()
     print 'Sucessfully dumped dataset.'
