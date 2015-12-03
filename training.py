@@ -19,7 +19,7 @@ def load_dataset(name):
     
     Name is the data set name, e.g. who_won_1031.
     '''
-    path = 'data/' + name + '.txt'
+    path = 'data/' + name + '.features'
     return dts.Dataset.load(path)
 
 ### TRAINNG METHODS ###

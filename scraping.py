@@ -11,6 +11,7 @@ from lxml import html
 import requests
 
 from textUtil import cleanText
+import game
 
 COMMENTS_URL = 'http://www.espnfc.us/commentary/{}/commentary.html'
 SCORES_URL = 'http://www.espnfc.us/scores?date={}'
@@ -61,14 +62,14 @@ def getURLs(date, limit=None, league=None):
             if league in url:
                 return True
         return False
-    return [url for url in urls if valid_league(url, league)]
+    return [str(url) for url in urls if valid_league(url, league)]
 
 
 def getTeams(tree):
     '''Returns the two playing teams: home, away.'''
     path = '//div[@class="above-fold"]//div[@class="team-name"]/span/text()'
     teams = tree.xpath(path)
-    return teams[0], teams[1]
+    return str(teams[0]), str(teams[1])
  
    
 def getComments(gameID):
@@ -80,4 +81,30 @@ def getComments(gameID):
     tree = getTree(url)
     timestamps =  tree.xpath('//li/div[@class="timestamp"]/p/text()')
     comments = tree.xpath('//li/div[@class="comment"]/p/text()')
-    return zip(timestamps, comments)[::-1]
+    return zip([str(t) for t in timestamps], [str(c) for c in comments])[::-1]
+
+### AUTOMATED LARGE-SCALE SCRAPING ###
+
+def interactive_scraping(path='data/main.txt'):
+    cmd = ''
+    while cmd != 'stop':
+        print 'Enter a date to scrape'
+        cmd = raw_input()
+        if cmd == 'stop':
+            break
+        try:
+            urls = getURLs(cmd)
+        except:
+            print 'Input is not in valid format (mm/dd/yyyy).'
+            continue
+        print 'Found {} games.'.format(len(urls))
+        count = 0
+        for url in urls:
+            try:
+                g = game.Game(url)
+                g.dump(path)
+                count += 1
+            except Exception as e:
+                print e
+                continue
+        print 'Successfully saved {} games'.format(str(count))

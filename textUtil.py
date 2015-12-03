@@ -27,7 +27,7 @@ def cleanText(text):
     the "share on Facebook" lines of the website.
     '''
     if isinstance(text, list):
-        text = [st for st in text if isClean(st)]
+        text = [str(st) for st in text if isClean(st)]
     if isinstance(text, str):
         for artefact in ARTEFACTS:
             text = text.replace(artefact, '')

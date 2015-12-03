@@ -32,7 +32,7 @@ class Dataset(object):
     @classmethod
     def load(cls, path):
         '''Loads the dataset from the given path.'''
-        f = open(path, 'r')
+        f = open(path, 'rb')
         try:
             return pickle.load(f)
         except:
@@ -54,7 +54,7 @@ class Dataset(object):
         
     def dump(self, path):
         '''Dumps the dataset to the given path.'''
-        f = open(path, 'w')
+        f = open(path, 'wb')
         pickle.dump(self, f)
         f.close()
         
@@ -98,20 +98,69 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
                 # add feature vect and label to dataset
                 dataset.append((feature_vector, label), words[i])
     return dataset, entities
+    
+
+def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
+    '''Builds the data set for a path to pickle dump and a given query.
+    
+    Should be merged with previous function.
+    '''
+    entities = entities or {}
+    # create Dataset object
+    print 'Starting to build dataset {}.'.format(name)
+    dataset = Dataset(name)
+    f = open(path, 'rb')
+    while True:
+        # create game objects
+        try:
+            g = pickle.load(f)
+        except:
+            break
+        # get and anonimyze text
+        text = g.text
+        for i in range(len(text)):
+            text[i], entities = txt.anonymize(text[i], entities)
+        inv_entities = {v: k for k, v in entities.items()}
+        # fetch answer
+        answer = g.query_dict[query]
+        for s in text:
+            s = '#BEGIN# ' + s + ' #END#'
+            words = s.split(' ')
+            # iterate over entities
+            for i in range(1, len(words)-1):
+                if not txt.isToken(words[i]):
+                    continue     
+                feature_vector = ext.extractor(method)(words, i)
+                entityNumber = int(words[i][3:])
+                label = (inv_entities[entityNumber] in answer.split(' ')) * 1.0
+                # add feature vect and label to dataset
+                dataset.append((feature_vector, label), words[i])
+    f.close()
+    return dataset, entities
 
 
-def build_and_dump(query, urls):
-    '''Dumps the data set and entities to files.'''
-    def make_name(name, type_='txt'):
+def build_and_dump(query, urls=None, path=None):
+    '''Dumps the data set and entities to files.
+    
+    The games should be taken from a list of urls by givin the argument urls,
+    or by a path by giving a path to a pickle dump of games.
+    '''
+    def make_name(name, type_='features'):
         return 'data/{}.{}'.format(name, type_)
-    name = txt.queryName(query) + '_' + str(len(urls))
-    dataset, entities = build_dataset(urls, name, query)
+    if urls:
+        name = txt.queryName(query) + '_' + str(len(urls))
+    else:
+        name = path.split('/')[-1].split('.')[0]
+    if urls:
+        dataset, entities = build_dataset(urls, name, query)
+    if path:
+        dataset, entities = build_dataset_from_path(path, name, query)
     if os.path.isfile(make_name(name)):
         os.remove(make_name(name))
     dataset.dump(make_name(name))
     if os.path.isfile(make_name(name, 'entities')):
         os.remove(make_name(name, 'entities'))   
-    f = open(make_name(name, 'entities'), 'w')
+    f = open(make_name(name, 'entities'), 'wb')
     pickle.dump(entities, f)
     f.close()
     print 'Sucessfully dumped dataset.'

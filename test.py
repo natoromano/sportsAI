@@ -74,7 +74,7 @@ def predict(name, query, testGame, model, method='skip_1', entities=None):
     return scores, answer
 
 
-def irun(name, query, debug=None):
+def irun(name, query, debug=3):
     '''Interactive testing.
     
     If debug is given, it should be a number of scores to print.
@@ -87,7 +87,11 @@ def irun(name, query, debug=None):
         testUrl = raw_input()
         if testUrl == 'stop':
             break
-        testGame = game.Game(testUrl)
+        try:
+            testGame = game.Game(testUrl)
+        except:
+            print 'Could not load game. Try again.'
+            continue
         scores, answer = predict(name, query, testGame, model, 'skip_1', 
                                  entities)
         print 'Query:', query
@@ -133,7 +137,7 @@ def test(name, query, date, number=10, flexible=True):
     return correct / float(len(output))
         
 
-simple_test()
+#simple_test()
 #irun('who_won_6', 'Who won?', 3)
 #accuracy = test('who_won_1031', 'Who won?', '10/24/2015', 20, False)
 #print 'Accuracy :', accuracy

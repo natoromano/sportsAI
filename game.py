@@ -5,8 +5,10 @@ Classes and methods to handle the games.
 @author: Nathanael Romano and Daniel Levy
 """
 
-import scraping
-import textUtil
+import pickle
+
+import scraping as scr
+import textUtil as txt
 
 URL_TESTS = 'http://www.espnfc.us/barclays-premier-league/' + \
             'match/422580/everton-manchester-united/report'
@@ -29,13 +31,13 @@ class Game(object):
     def __init__(self, url, comments=True):
         self.id = url.split('/')[self.ID_POSITION]
         self.url = url
-        self.tree = scraping.getTree(url)
-        self.text = scraping.getText(self.tree)
-        self.home, self.away = scraping.getTeams(self.tree)
-        self.comments = scraping.getComments(self.id)
+        tree = scr.getTree(url)
+        self.text = scr.getText(tree)
+        self.home, self.away = scr.getTeams(tree)
+        self.comments = scr.getComments(self.id)
         self.goals = self.get_goals()
-        self.queries = self.create_queries()
-    
+        self.query_dict = self.query_dict(self.create_queries())
+
     def get_goals(self):
         '''Returns the list of tuples 'minute, comment" for the game's goals,
         ordered by minute.'''
@@ -151,20 +153,25 @@ class Game(object):
         queries.append(Query('What was the final score?', self.final_score))
         # scorer queries
         for i in range(1, len(self.goals) + 1):
-            query = 'Who scored the {} goal?'.format(textUtil.nth(i))
+            query = 'Who scored the {} goal?'.format(txt.nth(i))
             queries.append(Query(query, self.scorer(i)))
         # team scorer queries
         for team in [self.home, self.away]:
             for i in range(1, len(self.team_goals(team)) + 1):
                 query = 'Who scored the {} goal for {}?'.format(\
-                                                        textUtil.nth(i), team)
+                                                        txt.nth(i), team)
                 queries.append(Query(query, self.team_scorer(i, team)))
         return queries      
 
-    @property        
-    def query_dict(self):
+    def query_dict(self, queries):
         '''Returns the game queries in the form of a map question:answer.'''
-        return dict((q.query, q.answer) for q in self.queries)
+        return dict((q.query, q.answer) for q in queries)
+        
+    def dump(self, path):
+        '''Uses pickle to dump the game to the given file.'''
+        f = open(path, 'ab')
+        pickle.dump(self, f)
+        f.close()
         
 
 class Query(object):
