@@ -8,9 +8,11 @@ Classes and methods to handle datasets.
 import os
 import pickle
 
-import game
+import game as gme
 import textUtil as txt
 import featureExtraction as ext
+
+PATH = 'features/'
 
 ### DATASET CLASS ###
 
@@ -64,10 +66,17 @@ class Dataset(object):
         self._features[feature] = self._max_feature_key
 
 
-### BUILDING DATASET ###
+### BUILDING DATASET ### 
 
 def build_dataset(urls, name, query, method='skip_1', entities=None):
-    '''Builds the data set for a list of game URLs and a given query.'''
+    '''Builds the data set for a list of game URLs and a given query.
+    
+    Only for testing.
+    The try/except clauses are here because sometimes the scraping does not
+    work, because of the EPSN website. In this case, the error is often a list
+    index out of range, as most of the scraping methods will break when they
+    reach specific areas of the HTML source code.
+    '''
     entities = entities or {}
     # create Dataset object
     print 'Starting to build dataset {}.'.format(name)
@@ -75,7 +84,7 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
     for url in urls:
         # create game objects
         try:
-            g = game.Game(url)
+            g = gme.Game(url)
         except:
             continue
         # get and anonimyze text
@@ -85,25 +94,20 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
         inv_entities = {v: k for k, v in entities.items()}
         # fetch answer
         answer = g.query_dict[query]
-        for s in text:
-            s = '#BEGIN# ' + s + ' #END#'
-            words = s.split(' ')
-            # iterate over entities
-            for i in range(1, len(words)-1):
-                if not txt.isToken(words[i]):
-                    continue     
-                feature_vector = ext.extractor(method)(words, i)
-                entityNumber = int(words[i][3:])
-                label = (inv_entities[entityNumber] in answer.split(' ')) * 1.0
-                # add feature vect and label to dataset
-                dataset.append((feature_vector, label), words[i])
+        # create feature vector for each entity in text
+        for ent_id in inv_entities.iterkeys():
+            ent_name = 'ent' + str(ent_id)
+            feature_vector = ext.create_feature_vector(ent_name, text, method)
+            label = label = (inv_entities[ent_id] in answer.split(' ')) * 1.0
+            # add feature vector to dataset
+            dataset.append((feature_vector, label), ent_name)
     return dataset, entities
-    
+
 
 def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
     '''Builds the data set for a path to pickle dump and a given query.
     
-    Should be merged with previous function.
+    Loops over the text entities.
     '''
     entities = entities or {}
     # create Dataset object
@@ -123,38 +127,29 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
         inv_entities = {v: k for k, v in entities.items()}
         # fetch answer
         answer = g.query_dict[query]
-        for s in text:
-            s = '#BEGIN# ' + s + ' #END#'
-            words = s.split(' ')
-            # iterate over entities
-            for i in range(1, len(words)-1):
-                if not txt.isToken(words[i]):
-                    continue     
-                feature_vector = ext.extractor(method)(words, i)
-                entityNumber = int(words[i][3:])
-                label = (inv_entities[entityNumber] in answer.split(' ')) * 1.0
-                # add feature vect and label to dataset
-                dataset.append((feature_vector, label), words[i])
+        # create feature vector for each entity in text
+        for ent_id in inv_entities.iterkeys():
+            ent_name = 'ent' + str(ent_id)
+            feature_vector = ext.create_feature_vector(ent_name, text, method)
+            label = label = (inv_entities[ent_id] in answer.split(' ')) * 1.0
+            # add feature vector to dataset
+            dataset.append((feature_vector, label), ent_name)
     f.close()
     return dataset, entities
 
 
-def build_and_dump(query, urls=None, path=None):
+def build_and_dump(name, query, method='skip_1', urls=None, path=None):
     '''Dumps the data set and entities to files.
     
     The games should be taken from a list of urls by givin the argument urls,
     or by a path by giving a path to a pickle dump of games.
     '''
     def make_name(name, type_='features'):
-        return 'data/{}.{}'.format(name, type_)
+        return 'features/{}.{}'.format(name, type_)
     if urls:
-        name = txt.queryName(query) + '_' + str(len(urls))
-    else:
-        name = path.split('/')[-1].split('.')[0]
-    if urls:
-        dataset, entities = build_dataset(urls, name, query)
+        dataset, entities = build_dataset(urls, name, query, method)
     if path:
-        dataset, entities = build_dataset_from_path(path, name, query)
+        dataset, entities = build_dataset_from_path(path, name, query, method)
     if os.path.isfile(make_name(name)):
         os.remove(make_name(name))
     dataset.dump(make_name(name))

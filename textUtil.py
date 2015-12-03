@@ -100,7 +100,7 @@ def removeToken(word):
     if isToken(word):
         return ENTITY_TOKEN
     else:
-        return word
+        return word.lower()
 
 def queryName(query):
     '''Turns a query like 'Who won?' into 'who_won'.'''

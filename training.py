@@ -19,7 +19,7 @@ def load_dataset(name):
     
     Name is the data set name, e.g. who_won_1031.
     '''
-    path = 'data/' + name + '.features'
+    path = 'features/' + name + '.features'
     return dts.Dataset.load(path)
 
 ### TRAINNG METHODS ###
@@ -52,10 +52,10 @@ def get_training_method(method):
         raise NotImplementedError(msg.format(method))
 
 
-def train(name, method):
+def train_and_save(name, method):
     '''Runs training.
     
-    Must us the liblinear library.
+    Must use the liblinear library.
     '''
     print 'Training dataset {} with method {}.'.format(name, method)
     model = get_training_method(method)(name)
