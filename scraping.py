@@ -136,8 +136,8 @@ def automated_scraping(start_date=None, stop_date=None, name=None):
         return ''.join(str(date).split('-'))
     if not start_date:
         start_date = datetime.date(2015, 8, 1)
-    if not stop_date:
-        stop_date = datetime.date(2015, 12, 2)
+    if not stop_date or stop_date > datetime.date(2015, 12, 3):
+        stop_date = datetime.date(2015, 12, 3)
     name = name or 'main'
     path = PATH + name
     date = start_date
@@ -147,8 +147,16 @@ def automated_scraping(start_date=None, stop_date=None, name=None):
         try:
             urls = getURLs(make_date(date))
         except:
-            print 'Could not fetch URLs for {}.'.format(date)
-            continue
+            # try second time
+            try:
+                urls = getURLs(make_date(date))
+            except:
+                # try third and last time
+                try:
+                    urls = getURLs(make_date(date))
+                except:
+                    print 'Could not fetch URLs for {}.'.format(date)
+                    continue
         print 'Found {} games for {}.'.format(len(urls),date)
         for url in urls:
             # for each URL, create and dump Game
@@ -161,4 +169,5 @@ def automated_scraping(start_date=None, stop_date=None, name=None):
         # go to next day
         date += datetime.timedelta(days=1)
     print 'Successfully saved {} games'.format(str(count))
+    return count
             

@@ -8,7 +8,6 @@ Various scripts to test the algorithm and pipeline. NEEDS REFACTORING
 import sys
 sys.path.append('liblinear/python/')
 
-import pickle, copy
 import liblinearutil as llb
 
 import game
@@ -29,11 +28,11 @@ def simple_test(name, query, method='skip_1'):
     irun(name, query, 3)
     
 
-def with_dataset(name, query, path, method='skip_1'):
+def with_games(name, query, path, method='skip_1'):
     '''Trains a model games that have already been scraped.'''
     dts.build_and_dump(name, query, method=method, path=path)
     #dumps model
-    trn.train_and_save(name, 'logistic_regression')
+    trn.train_and_save(name, 'svm')
     irun(name, query, 3)
     
 
@@ -48,19 +47,16 @@ def predict(name, query, testGame, model, method='skip_1'):
     answer), as well as the correct answer.'''
     entities = {}
     # create Dataset object
-    testSet = dts.Dataset(name)    
+    testSet = dts.Dataset.from_columns(name)    
     text = testGame.text
     for i in range(len(text)):
         text[i], entities = txt.anonymize(text[i], entities)
     inv_entities = {v: k for k, v in entities.items()}
     # fetch answer
-    answer = testGame.query_dict[query]
-    text = testGame.text
-    for i in range(len(text)):
-        text[i], entities = txt.anonymize(text[i], entities)
-    inv_entities = {v: k for k, v in entities.items()}
-    # fetch answer
-    answer = testGame.query_dict[query]
+    try:
+        answer = testGame.query_dict[query]
+    except KeyError:
+        answer = 'N/A'
     # create feature vector for each entity in text
     for ent_id in inv_entities.iterkeys():
         ent_name = 'ent' + str(ent_id)
@@ -91,7 +87,8 @@ def irun(name, query, debug=3):
             break
         try:
             testGame = game.Game(testUrl)
-        except:
+        except Exception as e:
+            print e
             print 'Could not load game. Try again.'
             continue
         scores, answer = predict(name, query, testGame, model, 'skip_1')

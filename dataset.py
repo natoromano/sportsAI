@@ -39,6 +39,17 @@ class Dataset(object):
             return pickle.load(f)
         except:
             return None
+            
+    @classmethod
+    def from_columns(cls, name):
+        '''As with the pandas framework, create a Dataset object using the
+        _features dictionnary.'''
+        path = 'features/{}.columns'.format(name)
+        f = open(path, 'rb')
+        dataset = cls(name)
+        dataset._features = pickle.load(f)
+        dataset._max_feature_key = max(dataset._features.values())
+        return dataset
         
     def append(self, example, entity):
         '''Adds an example to the dataset.'''
@@ -87,13 +98,16 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
             g = gme.Game(url)
         except:
             continue
+        try:
+            answer = g.query_dict[query]
+        except KeyError:
+            continue # question not in dataset (e.g. who scored the 1st goal)
         # get and anonimyze text
         text = g.text
         for i in range(len(text)):
             text[i], entities = txt.anonymize(text[i], entities)
         inv_entities = {v: k for k, v in entities.items()}
         # fetch answer
-        answer = g.query_dict[query]
         # create feature vector for each entity in text
         for ent_id in inv_entities.iterkeys():
             ent_name = 'ent' + str(ent_id)
@@ -120,6 +134,10 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
             g = pickle.load(f)
         except:
             break
+        try:
+            answer = g.query_dict[query]
+        except KeyError:
+            continue # question not in dataset (e.g. who scored the 1st goal)
         # get and anonimyze text
         text = g.text
         for i in range(len(text)):
@@ -157,5 +175,8 @@ def build_and_dump(name, query, method='skip_1', urls=None, path=None):
         os.remove(make_name(name, 'entities'))   
     f = open(make_name(name, 'entities'), 'wb')
     pickle.dump(entities, f)
+    f.close()
+    f = open(make_name(name, 'columns'), 'wb')
+    pickle.dump(dataset._features, f)
     f.close()
     print 'Sucessfully dumped dataset.'
