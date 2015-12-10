@@ -7,11 +7,18 @@ libraries.
 """
 
 import re
+import string
+
+from nltk.tag import StanfordNERTagger
+import nltk
+st = StanfordNERTagger('NER/english.all.3class.distsim.crf.ser.gz', 
+                       'NER/stanford-ner.jar')
 
 ARTEFACTS = ['\n', '\t']
 COUNTERS = ['0', 'first', 'second', 'third', 'fourth', 'fifth',
                 'sixth', 'seventh', 'eigth', 'ninth']
 ENTITY_TOKEN = 'ent'
+STOP_WORDS = ['the', 'and', 'in', 'was', 'when', 'to' 'his', 'had', 'with']
 
 
 def isClean(st):
@@ -50,49 +57,79 @@ def is_entity(word):
         return word.replace('\'', '').istitle()
     return word.istitle()
  
-       
-def anonymize(text, identities=None):
-    '''Anonymizes the given text.
+
+def anonymize(text):
+    '''Anonymization and entity recognition using Stanford NER.
     
-    Identities is a mapping word:index, mutated by the function.
+    Returns the text and a dictionnary entity:id.
+    Also removes stop words and scores.
     '''
-    if not identities:
-        identities = {}
-    output = []
-    current = []
-    for word in text.split():
-        if is_entity(word):
-            current.append(word)
+    def irrelevant(word):
+        '''Returns True if the word is a score or a stop word.'''
+        if word in STOP_WORDS:
+            return True
+        if len(word.split('-')) == 2:
+            if all([w in string.digits for w in word.split('-')]):
+                return True
+        return False
+    tokens = nltk.word_tokenize(text)
+    tags = st.tag(tokens)
+    res = []
+    i = 0
+    while i < len(tags):
+        word, tag = tags[i]  
+        if tag in ['PERSON','ORGANIZATION','LOCATION']:
+            j = i+1
+            while j < len(tags) and tags[j][1] == tag:
+                word = word + ' ' + tags[j][0]
+                j = j+1
+            i = j
         else:
-            if current:
-                if ' '.join(current) in identities:
-                    index = identities[' '.join(current)]
-                    output.append(ENTITY_TOKEN + str(index))
-                    current = []
-                else:
-                    index = len(identities)
-                    identities[' '.join(current)] = index
-                    output.append(ENTITY_TOKEN + str(index))
-                    current = []
-            output.append(word)
-    if current:
-        if ' '.join(current) in identities:
-            index = identities[' '.join(current)]
-            output.append(ENTITY_TOKEN + str(index))
-            current = []
-        else:
-            index = len(identities)
-            identities[' '.join(current)] = index
-            output.append(ENTITY_TOKEN + str(index))
-            current = []
-    return ' '.join(output), identities
+            i = i+1
+        res.append((word, tag))
+    d = set([w for w, t in res if t in ['PERSON','ORGANIZATION','LOCATION']])
+    def rel(x,y):
+        if x in y or y in x:
+            return True
+        if isAcronymOf(x,y) or isAcronymOf(y,x):
+            return True
+        return False
+    def isAcronymOf(s,t):
+        buff = ''
+        for l in s:
+            if l == l.upper():
+                buff += l
+        return buff == t
+    def makeEquivalentSets(items, rel):
+        association = {}
+        sets = []
+        i = 0
+        while len(items) > 0:
+            w = items.pop()
+            s = set()
+            for v in items:
+                if rel(w,v):
+                    s.add(v)
+                    association[v] = i
+            for v in s:
+                items.remove(v)
+            s.add(w)
+            association[w] = i
+            sets.append(s)
+            i += 1
+        return sets, association
+    s, a = makeEquivalentSets(d, rel)
+    for entity in a:
+        text = text.replace(entity, ENTITY_TOKEN + str(a[entity]))
+    text = ' '.join([t for t in text.split() if not irrelevant(t)])
+    return text, a
 
     
 def isToken(word):
     '''Returns true if the given word is of the form 'entX'.'''
     if not word:
         return False
-    return re.match(ur'ent[1-9]+', word) is not None
+    return re.match(ur'ent[0-9]+', word) is not None
 
 
 def removeToken(word):

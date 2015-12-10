@@ -13,13 +13,12 @@ import textUtil as txt
 def create_feature_vector(entity, text, method='skip_1'):
     '''Creates feature vector using specified method.'''
     vector = {}
-    for string in text:
-        words = string.split()
-        for i, word in enumerate(words):
-            # only update for the corresponding entity
-            if word != entity:
-                continue
-            vector.update(extractor(method)(words, i))
+    words = text.split()
+    for i, word in enumerate(words):
+        # only update for the corresponding entity
+        if word != entity:
+            continue
+        vector.update(extractor(method)(words, i))
     return vector
     
 def extractor(method):
@@ -70,6 +69,11 @@ def skip_2(words, index):
         dict_['after_' + str(w_plus_2)] = 1
     return dict_
     
+    
+def word2vec(words, index):
+    '''Uses a word2vec trained on 1200 sports article.'''
+    pass
+
 
 def gram_skip_2(words, index, n=4):
     '''ngram on skip_2_gram, continuous.
