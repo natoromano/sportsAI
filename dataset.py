@@ -8,11 +8,14 @@ Classes and methods to handle datasets.
 import os
 import pickle
 
+from gensim.models import word2vec
+
 import game as gme
 import textUtil as txt
 import featureExtraction as ext
 
 PATH = 'features/'
+WORD2VEC_PATH = 'word2vec/vectors3.bin'
 
 ### DATASET CLASS ###
 
@@ -91,6 +94,9 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
     index out of range, as most of the scraping methods will break when they
     reach specific areas of the HTML source code.
     '''
+    if method=='word2vec':
+        model = word2vec.Word2Vec.load_word2vec_format(WORD2VEC_PATH,
+                                                      binary=True)
     entities = entities or {}
     # create Dataset object
     print 'Starting to build dataset {}.'.format(name)
@@ -115,10 +121,24 @@ def build_dataset(urls, name, query, method='skip_1', entities=None):
         # create feature vector for each entity in text
         for ent_id in inv_entities.iterkeys():
             ent_name = 'ent' + str(ent_id)
-            feature_vector = ext.create_feature_vector(ent_name, text, method)
-            label = label = (inv_entities[ent_id] in answer.split(' ')) * 1.0
-            # add feature vector to dataset
-            dataset.append((feature_vector, label), ent_name)
+            if method!='word2vec':
+                feature_vector = ext.create_feature_vector(ent_name, 
+                                                           text, method)
+                try:
+                    label = (ent_id == inv_entities[answer]) * 1.0
+                except KeyError:
+                    label = (inv_entities[ent_id] in answer) * 1.0               
+                # add feature vector to dataset
+                dataset.append((feature_vector, label), ent_name)
+            else:
+                feature_vector = ext.create_feature_vector(ent_name, text,
+                                                           method, model=model)
+                try:
+                    label = (ent_id == inv_entities[answer]) * 1.0
+                except KeyError:
+                    label = (inv_entities[ent_id] in answer) * 1.0 
+                dataset.append((dict(zip(range(len(feature_vector)), 
+                                         feature_vector)), label), ent_name)
     return dataset, entities
 
 
@@ -127,6 +147,9 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
     
     Loops over the text entities.
     '''
+    if method=='word2vec':
+        model = word2vec.Word2Vec.load_word2vec_format(WORD2VEC_PATH, 
+                                                      binary=True)
     entities = entities or {}
     # create Dataset object
     print 'Starting to build dataset {}.'.format(name)
@@ -136,6 +159,7 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
         # create game objects
         try:
             g = pickle.load(f)
+            print 'Loaded game in training set.'
         except:
             break
         try:
@@ -153,10 +177,24 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
         # create feature vector for each entity in text
         for ent_id in inv_entities.iterkeys():
             ent_name = 'ent' + str(ent_id)
-            feature_vector = ext.create_feature_vector(ent_name, text, method)
-            label = label = (inv_entities[ent_id] in answer.split(' ')) * 1.0
-            # add feature vector to dataset
-            dataset.append((feature_vector, label), ent_name)
+            if method!='word2vec':
+                feature_vector = ext.create_feature_vector(ent_name, 
+                                                           text, method)
+                try:
+                    label = (ent_id == inv_entities[answer]) * 1.0
+                except KeyError:
+                    label = (inv_entities[ent_id] in answer) * 1.0                
+                # add feature vector to dataset
+                dataset.append((feature_vector, label), ent_name)
+            else:
+                feature_vector = ext.create_feature_vector(ent_name, text,
+                                                           method, model=model)
+                try:
+                    label = (ent_id == inv_entities[answer]) * 1.0
+                except KeyError:
+                    label = (inv_entities[ent_id] in answer) * 1.0 
+                dataset.append((dict(zip(range(len(feature_vector)), 
+                                         feature_vector)), label), ent_name)
     f.close()
     return dataset, entities
 

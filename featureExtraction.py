@@ -6,13 +6,21 @@ automated.
 @author: Nathanael Romano and Daniel Levy
 """
 
+import numpy as np
+
 import textUtil as txt
 
 ### GENERIC FEATURE EXTRACTOR ###
   
-def create_feature_vector(entity, text, method='skip_1'):
-    '''Creates feature vector using specified method.'''
+def create_feature_vector(entity, text, method='skip_1', model=None):
+    '''Creates feature vector using specified method.
+    
+    Model holds a word2vec model.
+    '''
     vector = {}
+    if model is not None:
+        sentences = [s for s in text.split('.') if entity in s]
+        return word2vec_features(entity, sentences, model)
     words = text.split()
     for i, word in enumerate(words):
         # only update for the corresponding entity
@@ -21,6 +29,7 @@ def create_feature_vector(entity, text, method='skip_1'):
         vector.update(extractor(method)(words, i))
     return vector
     
+
 def extractor(method):
     '''Returns feature extractor function.'''
     try:
@@ -70,9 +79,23 @@ def skip_2(words, index):
     return dict_
     
     
-def word2vec(words, index):
-    '''Uses a word2vec trained on 1200 sports article.'''
-    pass
+def word2vec_features(entity, sentences, model):
+    '''Uses a word2vec trained on 1200 sports article.
+    
+    Computes the average vector for the words in the entity's sentence.'''
+    arrays = []
+    for sentence in sentences:
+        count = 0
+        array = np.zeros(model.vector_size)
+        for w in sentence:
+            if w in model and w != 'ent':
+                count += 1
+                array += model[w]
+        arrays.append(array / float(count))
+    if arrays:
+        return sum(arrays) / len(arrays)
+    else:
+        return np.zeros(model.vector_size)
 
 
 def gram_skip_2(words, index, n=4):

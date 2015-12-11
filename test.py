@@ -5,7 +5,6 @@ Various scripts to test the algorithm and pipeline.
 @author: Nathanael Romano and Daniel Levy
 """
 
-import time
 import sys
 import pickle
 sys.path.append('liblinear/python/')
@@ -16,38 +15,14 @@ import game as gme
 import dataset as dts
 import textUtil as txt
 import featureExtraction as ext
-import training as trn
-import scraping as scr
 
-
-### INTERACTIVE TEST FUNCTIONS - TO CALL DIRECTLY ###
-
-
-def simple_test(name, query, method='skip_1'):
-    '''Builds, train, and interactively test a simple model with few games, 
-    for debugging.'''
-    urls = scr.getURLs('20151128')
-    dts.build_and_dump(name, query, method=method, urls=urls)
-    # dumps model
-    trn.train_and_save(name, 'logistic_regression')
-    irun(name, query, 3)
-    
-
-def with_games(name, query, path, method='skip_1'):
-    '''Trains a model games that have already been scraped.'''
-    begin = time.time()
-    dts.build_and_dump(name, query, method=method, path=path)
-    #dumps model
-    trn.train_and_save(name, 'logistic_regression')
-    irun(name, query, 3)
-    print 'Time:', time.time()-begin
-    
-    
-### HELPER FUNCTIONS ###
-    
 
 def load(name):
-    '''Loads the model and data.'''
+    '''Loads the model and data.
+    
+    Columns is a dictionnary used when the feature keys were converted to 
+    numbers, for liblinear.
+    '''
     model = llb.load_model('models/{}.model'.format(name))
     columns = dts.Dataset.from_columns(name)._features
     return model, columns
@@ -55,7 +30,11 @@ def load(name):
 
 def predict(name, query, testGame, model, method='skip_1'):
     '''Predicts the answer to the query and returns an array of tuples (score,
-    answer), as well as the correct answer.'''
+    answers), as well as the correct answer.
+    
+    In the tuples, answers is all the possible right answers e.g. ['Ronaldo',
+    'Cristiano Ronaldo', 'Cristiano'].
+    '''
     entities = {}
     # create Dataset object
     testSet = dts.Dataset.from_columns(name)    
@@ -137,7 +116,7 @@ def test(name, test_set, query, method='skip_1'):
     output = []
     correct = 0
     print 'Testing on {}...'.format(test_set)
-    f = open('games/{}'.format(test_set))
+    f = open('games/{}'.format(test_set), 'rb')
     while True:
         try:
             testGame = pickle.load(f)

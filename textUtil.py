@@ -50,7 +50,10 @@ def nth(n):
  
        
 def is_entity(word):
-    '''Returns true if the word is an entity.'''
+    '''Returns true if the word is an entity.
+    
+    Now obsolete with the NER entity tagging.
+    '''
     if word.upper() == word:
         return True
     if '\'' in word:
@@ -89,18 +92,21 @@ def anonymize(text):
         res.append((word, tag))
     d = set([w for w, t in res if t in ['PERSON','ORGANIZATION','LOCATION']])
     def rel(x,y):
+        '''Checks if x and y can be the same entity.'''
         if x in y or y in x:
             return True
         if isAcronymOf(x,y) or isAcronymOf(y,x):
             return True
         return False
     def isAcronymOf(s,t):
+        '''Checks if t is an actronym s.'''
         buff = ''
         for l in s:
             if l == l.upper():
                 buff += l
         return buff == t
     def makeEquivalentSets(items, rel):
+        '''Creates set of equivalent entities.'''
         association = {}
         sets = []
         i = 0
@@ -121,6 +127,7 @@ def anonymize(text):
     s, a = makeEquivalentSets(d, rel)
     for entity in a:
         text = text.replace(entity, ENTITY_TOKEN + str(a[entity]))
+    text = text.replace('\xc2\xa0', ' ')
     text = ' '.join([t for t in text.split() if not irrelevant(t)])
     return text, a
 
