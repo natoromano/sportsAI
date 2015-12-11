@@ -129,20 +129,19 @@ def count_games(name):
             break
     print 'Found {} games.'.format(count)
     f.close()
-    
-def testNER():
-    import textUtil as txt
-    import game as gme
-    g = gme.Game(gme.URL_TESTS)
-    text = ' '.join(g.text)
-    begin = time.time()
-    t, e = txt.anonymize(text)
-    print time.time()-begin
 
-# start_date = datetime.date(2015, 9, 10)
-# scrape_games('small', start_date)
+start_date = datetime.date(2015, 1, 15)
+scrape_games('small', start_date, train=50, dev=20, test=20)
 
 # build_corpus()
+
+# count_games('train_small')
+# count_games('dev_small')
+# count_games('train_big')
+# count_games('dev_big')
+# count_games('test_big')
+# count_games('train_huge')
+# count_games('test_huge')
 
 # full_test('skip_1_big', 'Who won?', 'train_big', 'train_dev', 'skip_1')
 # full_test('skip_2_big', 'Who won?', 'train_big', 'train_dev', 'skip_2')
