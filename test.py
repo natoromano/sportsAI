@@ -8,8 +8,6 @@ Various scripts to test the algorithm and pipeline.
 import sys
 import pickle
 sys.path.append('liblinear/python/')
-reload(sys)
-sys.setdefaultencoding('utf8')
 
 import liblinearutil as llb
 
@@ -51,26 +49,26 @@ def predict(name, query, testGame, model, method='skip_1'):
     except KeyError:
         answer = 'N/A'
     # create feature vector for each entity in text
-        for ent_id in inv_entities.iterkeys():
-            ent_name = 'ent' + str(ent_id)
-            if method!='word2vec':
-                feature_vector = ext.create_feature_vector(ent_name, 
-                                                           text, method)
-                try:
-                    label = (ent_id == inv_entities[answer]) * 1.0
-                except KeyError:
-                    label = (inv_entities[ent_id] in answer) * 1.0                
-                # add feature vector to dataset
-                testSet.append((feature_vector, label), ent_name)
-            else:
-                feature_vector = ext.create_feature_vector(ent_name, text,
-                                                           method, model=model)
-                try:
-                    label = (ent_id == inv_entities[answer]) * 1.0
-                except KeyError:
-                    label = (inv_entities[ent_id] in answer) * 1.0 
-                testSet.append((dict(zip(range(len(feature_vector)), 
-                                         feature_vector)), label), ent_name)
+    for ent_id in inv_entities.iterkeys():
+        ent_name = 'ent' + str(ent_id)
+        if method!='word2vec':
+            feature_vector = ext.create_feature_vector(ent_name, 
+                                                       text, method)
+            try:
+                label = (ent_id == inv_entities[answer]) * 1.0
+            except KeyError:
+                label = (inv_entities[ent_id] in answer) * 1.0                
+            # add feature vector to dataset
+            testSet.append((feature_vector, label), ent_name)
+        else:
+            feature_vector = ext.create_feature_vector(ent_name, text,
+                                                       method, model=model)
+            try:
+                label = (ent_id == inv_entities[answer]) * 1.0
+            except KeyError:
+                label = (inv_entities[ent_id] in answer) * 1.0 
+            testSet.append((dict(zip(range(len(feature_vector)), 
+                                     feature_vector)), label), ent_name)
     scores = []
     words = testSet.entities
     _, _, probas = llb.predict(testSet.Y, testSet.X, model, '-b 1')
