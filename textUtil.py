@@ -127,7 +127,6 @@ def anonymize(text):
     s, a = makeEquivalentSets(d, rel)
     for entity in a:
         text = text.replace(entity, ENTITY_TOKEN + str(a[entity]))
-    text = text.replace('\xc2\xa0', ' ')
     text = ' '.join([t for t in text.split() if not irrelevant(t)])
     return text, a
 

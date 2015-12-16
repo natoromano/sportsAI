@@ -130,8 +130,8 @@ def count_games(name):
     print 'Found {} games.'.format(count)
     f.close()
 
-start_date = datetime.date(2015, 1, 15)
-scrape_games('small', start_date, train=50, dev=20, test=20)
+# start_date = datetime.date(2015, 1, 15)
+# scrape_games('small', start_date, train=50, dev=20, test=20)
 
 # build_corpus()
 
@@ -145,4 +145,4 @@ scrape_games('small', start_date, train=50, dev=20, test=20)
 
 # full_test('skip_1_big', 'Who won?', 'train_big', 'train_dev', 'skip_1')
 # full_test('skip_2_big', 'Who won?', 'train_big', 'train_dev', 'skip_2')
-# full_test('word2vec', 'Who won?', 'train_big', 'train_dev', 'word2vec')
+# full_test('word2vec_big', 'Who won?', 'train_big', 'train_dev', 'word2vec')

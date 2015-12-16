@@ -1,17 +1,24 @@
 -------------------------------------
  CS221 PROJECT README - LEVY ROMANO
 -------------------------------------
-MACHINE READING FROM A CONTEXTUALIZED
+        MACHINE READING FROM A 
+            CONTEXTUALIZED 
      DATA SOURCE: SPORTS REPORTS
 -------------------------------------
 
 Table of Contents
 =================
 
+- Abstract
 - Code organization
 - Data organization
 - Libraries
 - Using the code
+
+
+Abstract
+============
+Machine reading is the exciting challenge to build systems capable of reading natural language documents and most of all understand them. This project focuses on this problem but within a very specific scope: answering natural language questions about highly contextualized docu- ments, in this case: sport game reports. To be more specific, this will be applied on soccer-related articles from the website ESPN. We tackle this problem by building a system capable of finding the answer to spe- cific questions, without any world knowledge, only focusing on sentence structure and context.
 
 
 Code organization

@@ -167,7 +167,7 @@ def build_dataset_from_path(path, name, query, method='skip_1', entities=None):
         except KeyError:
             continue # question not in dataset (e.g. who scored the 1st goal)
         # get and anonimyze text
-        text = ' '.join(g.text)
+        text = ' '.join([t.decode() for t in g.text])
         text, entities = txt.anonymize(text)
         #for i in range(len(text)):
             #text[i], entities = txt.anonymize(text[i], entities)

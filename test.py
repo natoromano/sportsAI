@@ -38,7 +38,7 @@ def predict(name, query, testGame, model, method='skip_1'):
     entities = {}
     # create Dataset object
     testSet = dts.Dataset.from_columns(name)    
-    text = ' '.join(testGame.text)
+    text = ' '.join([t.decode() for t in testGame.text])
     text, entities = txt.anonymize(text)
     #for i in range(len(text)):
         #text[i], entities = txt.anonymize(text[i], entities)
